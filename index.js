@@ -3,7 +3,8 @@ const app = express()
 const cors = require('cors')
 
 app.use(cors())
-
+//agregamos el middleware integrado de Express llamado static
+app.use(express.static('dist'))
 
 let notes = [
   {
