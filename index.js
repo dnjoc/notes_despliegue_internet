@@ -85,6 +85,7 @@ app.get('/', (request, response) => {
 
   //usando el metodo findById de mongoose
   app.get('/api/notes/:id', (request, response) => {
+    console.log(request.body.id)
     Note.findById(request.params.id).then(note => {
       response.json(note)
     })
