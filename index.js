@@ -1,5 +1,10 @@
 const express = require('express')
 const app = express()
+
+require('dotenv').config()
+
+const Note = require('./models/note')
+
 const cors = require('cors')
 
 app.use(cors())
@@ -34,6 +39,14 @@ const requestLogger = (request, response, next) => {
 
 app.use(express.json())
 app.use(requestLogger)
+//Configuracion de mongodb atlas
+
+//const password = process.argv[2]
+// const url =
+//   `mongodb+srv://dnjoc:${password}@cluster0.1o0ya.mongodb.net/noteApp?retryWrites=true&w=majority`
+
+//const Note = mongoose.model('Note', noteSchema)
+//const Note = require('./models/note')
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
@@ -49,9 +62,15 @@ app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
   })
   
+ //configuracion get para consulta en mongodb 
   app.get('/api/notes', (request, response) => {
-    response.json(notes)
+    Note.find({}).then(notes => {
+      response.json(notes)
+    })
   })
+  // app.get('/api/notes', (request, response) => {
+  //   response.json(notes)
+  // })
 
   app.get('/api/notes/:id', (request, response) => {
 
@@ -92,7 +111,8 @@ app.get('/', (request, response) => {
 
   app.use(unknownEndpoint)
   
-  const PORT = process.env.PORT || 3001
+  //const PORT = process.env.PORT || 3001
+  const PORT = process.env.PORT
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
   })
