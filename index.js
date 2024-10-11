@@ -36,7 +36,10 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
-  } 
+  }
+  else if (error.name === 'ValidationError') {
+     return response.status(400).json({ error: error.message })
+ }
 
   next(error)
 }
@@ -67,8 +70,8 @@ const unknownEndpoint = (request, response) => {
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
   })
-  
- //configuracion get para consulta en mongodb 
+
+ //configuracion get para consulta en mongodb
   app.get('/api/notes', (request, response) => {
     Note.find({}).then(notes => {
       response.json(notes)
@@ -110,52 +113,59 @@ app.get('/', (request, response) => {
 
   // app.post('/api/notes', (request, response) => {
   //   const body = request.body
-  
+
   //   if (!body.content) {
-  //     return response.status(400).json({ 
-  //       error: 'content missing' 
+  //     return response.status(400).json({
+  //       error: 'content missing'
   //     })
   //   }
-  
+
   //   const note = {
   //     content: body.content,
   //     important: Boolean(body.important) || false,
   //     id: generateId(),
   //   }
-  
+
   //   notes = notes.concat(note)
-  
+
   //   response.json(note)
   // })
 
 //Configuracion para crear una nueva nota en mogodb
-  app.post('/api/notes', (request, response) => {
+  app.post('/api/notes', (request, response, next) => {
     const body = request.body
-  
+
     if (body.content === undefined) {
       return response.status(400).json({ error: 'content missing' })
     }
-  
+
     const note = new Note({
       content: body.content,
       important: body.important || false,
     })
-  
-    note.save().then(savedNote => {
+
+    note.save()
+    .then(savedNote => {
       response.json(savedNote)
     })
+    .catch(error => next(error))
   })
 
   //configuracion para actualizar la importancia de una nota en mongodb
   app.put('/api/notes/:id', (request, response, next) => {
-    const body = request.body
-  
-    const note = {
-      content: body.content,
-      important: body.important,
-    }
-  
-    Note.findByIdAndUpdate(request.params.id, note, { new: true })
+    // const body = request.body
+    const { content, important } = request.body
+    // const note = {
+    //   content: body.content,
+    //   important: body.important,
+    // }
+
+    // Note.findByIdAndUpdate(request.params.id, note, { new: true })
+    Note.findByIdAndUpdate(
+      request.params.id, 
+      { content, important },
+      { new: true, runValidators: true, context: 'query' }
+    ) 
       .then(updatedNote => {
         response.json(updatedNote)
       })
@@ -165,7 +175,7 @@ app.get('/', (request, response) => {
   // app.delete('/api/notes/:id', (request, response) => {
   //   const id = Number(request.params.id)
   //   notes = notes.filter(note => note.id !== id)
-  
+
   //   response.status(204).end()
   // })
   //Configuracion para eliminar una nota en mongoDB
@@ -177,7 +187,7 @@ app.get('/', (request, response) => {
       .catch(error => next(error))
   })
 
-  app.use(unknownEndpoint) 
+  app.use(unknownEndpoint)
   app.use(errorHandler)
   //const PORT = process.env.PORT || 3001
   const PORT = process.env.PORT
